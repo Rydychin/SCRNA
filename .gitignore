@@ -1,5 +1,12 @@
 # Local environment config
 .env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Raw FASTQ files can be large
 data/fastq/*
@@ -20,13 +27,116 @@ data/output/*
 # Logs
 logs/*
 !logs/.gitkeep
+*.log
 
 # SRA downloads and temporary files
 sra_download/*
 
 # Python cache
 __pycache__/
+*.py[codz]
 *.pyc
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Python tooling
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+cython_debug/
+
+# PEP 582
+__pypackages__/
+
+# Flask/Django common local files
+instance/
+.webassets-cache
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Misc generated files
+*.mo
+*.pot
+.scrapy
+docs/_build/
+.pybuilder/
+target/
+.pdm-python
+.pdm-build/
+.pixi
+/site
+tempCodeRunnerFile.py
+.pypirc
+
+# Service/runtime data
+celerybeat-schedule
+celerybeat.pid
+*.rdb
+*.aof
+*.pid
+mnesia/
+rabbitmq/
+rabbitmq-data/
+activemq-data/
+
+# App secrets
+.streamlit/secrets.toml
 
 # macOS files
 .DS_Store
