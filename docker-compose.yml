@@ -1,0 +1,112 @@
+services:
+  qc:
+    # First stage: read FASTQ files and write QC metrics.
+    build:
+      context: ./services/qc
+      dockerfile: Dockerfile
+    container_name: scrna_qc
+    env_file:
+      - .env
+    environment:
+      STAGE_NAME: qc
+      INPUT_DIR: /data/fastq
+      OUTPUT_DIR: /data/intermediate/qc
+      LOG_DIR: /logs
+      MIN_READS: ${MIN_READS:-1}
+      SAMPLE_ID: ${SAMPLE_ID:-sample}
+    volumes:
+      # FASTQ input is read-only so the QC container cannot change raw data.
+      - ./data/fastq:/data/fastq:ro
+      # Intermediate outputs are shared with later stages.
+      - ./data/intermediate:/data/intermediate
+      # Logs are shared so each service can write to the same host folder.
+      - ./logs:/logs
+    command: ["python", "/app/qc.py"]
+    healthcheck:
+      # The container is considered healthy once the QC success marker exists.
+      test: ["CMD-SHELL", "test -f /data/intermediate/qc/_SUCCESS"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "${QC_CPUS:-1}"
+          memory: "${QC_MEMORY:-1g}"
+
+  alignment:
+    # Second stage: use QC output and create mock alignment metrics.
+    build:
+      context: ./services/alignment
+      dockerfile: Dockerfile
+    container_name: scrna_alignment
+    env_file:
+      - .env
+    environment:
+      STAGE_NAME: alignment
+      INPUT_DIR: /data/fastq
+      QC_DIR: /data/intermediate/qc
+      REFERENCE_DIR: /data/reference
+      OUTPUT_DIR: /data/intermediate/alignment
+      LOG_DIR: /logs
+      ALIGNER: ${ALIGNER:-mock}
+      SAMPLE_ID: ${SAMPLE_ID:-sample}
+    volumes:
+      - ./data/fastq:/data/fastq:ro
+      - ./data/reference:/data/reference:ro
+      - ./data/intermediate:/data/intermediate
+      - ./logs:/logs
+    depends_on:
+      # Do not start alignment unless QC finished successfully.
+      qc:
+        condition: service_completed_successfully
+    command: ["python", "/app/align.py"]
+    healthcheck:
+      # The report stage can trust alignment once this marker appears.
+      test: ["CMD-SHELL", "test -f /data/intermediate/alignment/_SUCCESS"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "${ALIGN_CPUS:-2}"
+          memory: "${ALIGN_MEMORY:-4g}"
+
+  report:
+    # Final stage: gather QC and alignment metrics into user-facing outputs.
+    build:
+      context: ./services/report
+      dockerfile: Dockerfile
+    container_name: scrna_report
+    env_file:
+      - .env
+    environment:
+      STAGE_NAME: report
+      QC_DIR: /data/intermediate/qc
+      ALIGNMENT_DIR: /data/intermediate/alignment
+      OUTPUT_DIR: /data/output
+      LOG_DIR: /logs
+      SAMPLE_ID: ${SAMPLE_ID:-sample}
+    volumes:
+      # Report only needs to read intermediate metrics.
+      - ./data/intermediate:/data/intermediate:ro
+      # Final report files are written here.
+      - ./data/output:/data/output
+      - ./logs:/logs
+    depends_on:
+      # Do not generate the report until alignment is done.
+      alignment:
+        condition: service_completed_successfully
+    command: ["python", "/app/report.py"]
+    healthcheck:
+      # This marker means the whole pipeline finished.
+      test: ["CMD-SHELL", "test -f /data/output/_SUCCESS"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "${REPORT_CPUS:-1}"
+          memory: "${REPORT_MEMORY:-1g}"

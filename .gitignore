@@ -1,0 +1,32 @@
+# Local environment config
+.env
+
+# Raw FASTQ files can be large
+data/fastq/*
+!data/fastq/.gitkeep
+
+# Reference genome files can be large
+data/reference/*
+!data/reference/.gitkeep
+
+# Pipeline-generated intermediate files
+data/intermediate/*
+!data/intermediate/.gitkeep
+
+# Final generated outputs
+data/output/*
+!data/output/.gitkeep
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# SRA downloads and temporary files
+sra_download/*
+
+# Python cache
+__pycache__/
+*.pyc
+
+# macOS files
+.DS_Store
